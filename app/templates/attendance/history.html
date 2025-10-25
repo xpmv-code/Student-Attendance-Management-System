@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+
+{% block title %}历史考勤记录 - 学生考勤管理系统{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- 页面标题 -->
+        <div class="mb-6">
+            <div class="flex items-center text-sm text-gray-500 mb-2">
+                <a href="{{ url_for('attendance.index') }}" class="hover:text-blue-600">考勤日历</a>
+                <svg class="w-4 h-4 mx-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+                <span>历史记录</span>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-900">历史考勤记录</h1>
+            <p class="mt-2 text-sm text-gray-600">查询和管理历史考勤数据</p>
+        </div>
+
+        <!-- 筛选表单 -->
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <form method="GET" action="{{ url_for('attendance.history') }}" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <!-- 开始日期 -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">开始日期</label>
+                        <input type="date" 
+                               name="start_date" 
+                               value="{{ start_date }}"
+                               class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+
+                    <!-- 结束日期 -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">结束日期</label>
+                        <input type="date" 
+                               name="end_date" 
+                               value="{{ end_date }}"
+                               class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+
+                    <!-- 课程筛选 -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">课程</label>
+                        <select name="course_id" 
+                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <option value="">全部课程</option>
+                            {% for course in courses %}
+                            <option value="{{ course.course_id }}" {% if selected_course_id == course.course_id|string %}selected{% endif %}>
+                                {{ course.course_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- 操作按钮 -->
+                    <div class="flex items-end space-x-2">
+                        <button type="submit" 
+                                class="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">
+                            查询
+                        </button>
+                        <a href="{{ url_for('attendance.history') }}" 
+                           class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
+                            清空
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- 筛选结果提示 -->
+        {% if start_date or end_date or selected_course_id %}
+        <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <svg class="h-5 w-5 text-blue-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p class="text-sm text-blue-700">
+                        当前筛选条件：
+                        {% if start_date %}开始日期 {{ start_date }}{% endif %}
+                        {% if end_date %}{% if start_date %}，{% endif %}结束日期 {{ end_date }}{% endif %}
+                        {% if selected_course_id %}
+                        {% if start_date or end_date %}，{% endif %}
+                        课程：{{ courses|selectattr('course_id', 'equalto', selected_course_id|int)|map(attribute='course_name')|first }}
+                        {% endif %}
+                        ｜ 共找到 <span class="font-semibold">{{ pagination.total }}</span> 条记录
+                    </p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- 考勤记录列表 -->
+        {% if records %}
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                日期
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                课程名称
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                应到人数
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                实到人数
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                请假人数
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                旷课人数
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                到勤率
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                操作
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for record in records %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {{ record.attendance_date.strftime('%Y-%m-%d') }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                {{ record.course_name }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">
+                                {{ total_students }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-center font-semibold text-green-600">
+                                {{ record.present }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-center font-semibold text-yellow-600">
+                                {{ record.leave }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-center font-semibold text-red-600">
+                                {{ record.absent }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-center">
+                                <span class="font-semibold {% if record.rate >= 90 %}text-green-600{% elif record.rate >= 80 %}text-yellow-600{% else %}text-red-600{% endif %}">
+                                    {{ record.rate }}%
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-center">
+                                <a href="{{ url_for('attendance.record', course_id=record.course_id, date=record.attendance_date.strftime('%Y-%m-%d')) }}" 
+                                   class="text-blue-600 hover:text-blue-900">查看/编辑</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 分页 -->
+            {% if pagination.pages > 1 %}
+            <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+                <div class="flex-1 flex justify-between sm:hidden">
+                    {% if pagination.has_prev %}
+                    <a href="{{ url_for('attendance.history', page=pagination.prev_num, start_date=start_date, end_date=end_date, course_id=selected_course_id) }}" 
+                       class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                        上一页
+                    </a>
+                    {% endif %}
+                    {% if pagination.has_next %}
+                    <a href="{{ url_for('attendance.history', page=pagination.next_num, start_date=start_date, end_date=end_date, course_id=selected_course_id) }}" 
+                       class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                        下一页
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-sm text-gray-700">
+                            显示第 
+                            <span class="font-medium">{{ (pagination.page - 1) * pagination.per_page + 1 }}</span>
+                            到 
+                            <span class="font-medium">{{ min(pagination.page * pagination.per_page, pagination.total) }}</span> 
+                            条，共 
+                            <span class="font-medium">{{ pagination.total }}</span> 
+                            条记录
+                        </p>
+                    </div>
+                    <div>
+                        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                            {% if pagination.has_prev %}
+                            <a href="{{ url_for('attendance.history', page=pagination.prev_num, start_date=start_date, end_date=end_date, course_id=selected_course_id) }}" 
+                               class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                上一页
+                            </a>
+                            {% endif %}
+                            
+                            {% for page_num in range(max(1, pagination.page - 2), min(pagination.pages, pagination.page + 2) + 1) %}
+                                {% if page_num == pagination.page %}
+                                <span class="relative inline-flex items-center px-4 py-2 border border-blue-500 bg-blue-50 text-sm font-medium text-blue-600">
+                                    {{ page_num }}
+                                </span>
+                                {% else %}
+                                <a href="{{ url_for('attendance.history', page=page_num, start_date=start_date, end_date=end_date, course_id=selected_course_id) }}" 
+                                   class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                    {{ page_num }}
+                                </a>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if pagination.has_next %}
+                            <a href="{{ url_for('attendance.history', page=pagination.next_num, start_date=start_date, end_date=end_date, course_id=selected_course_id) }}" 
+                               class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                下一页
+                            </a>
+                            {% endif %}
+                        </nav>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="bg-white rounded-lg shadow-sm p-12 text-center">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">暂无考勤记录</h3>
+            <p class="mt-1 text-sm text-gray-500">请调整筛选条件或返回日历视图记录考勤</p>
+            <div class="mt-6">
+                <a href="{{ url_for('attendance.index') }}" 
+                   class="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">
+                    返回考勤日历
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

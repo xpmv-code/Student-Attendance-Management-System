@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}数据概览 - 学生考勤管理系统{% endblock %}
+
+{% block page_title %}数据概览{% endblock %}
+{% block page_desc %}系统核心数据统计与快速操作{% endblock %}
+
+{% block content %}
+<!-- 统计卡片区域 -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <!-- 学生总数 -->
+    <div class="bg-white rounded-xl p-6 card-shadow">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-500 text-sm">学生总数</p>
+                <h3 class="text-3xl font-bold mt-2">{{ student_count }}</h3>
+                <p class="text-gray-500 text-sm mt-2">
+                    <a href="{{ url_for('student.index') }}" class="text-primary hover:underline">查看详情</a>
+                </p>
+            </div>
+            <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                <i class="fa fa-users text-xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- 课程总数 -->
+    <div class="bg-white rounded-xl p-6 card-shadow">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-500 text-sm">课程总数</p>
+                <h3 class="text-3xl font-bold mt-2">{{ course_count }}</h3>
+                <p class="text-gray-500 text-sm mt-2">
+                    <a href="{{ url_for('course.index') }}" class="text-primary hover:underline">查看详情</a>
+                </p>
+            </div>
+            <div class="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center text-secondary">
+                <i class="fa fa-book text-xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- 今日考勤 -->
+    <div class="bg-white rounded-xl p-6 card-shadow">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-500 text-sm">今日考勤</p>
+                <h3 class="text-3xl font-bold mt-2">{{ today_attendance }}</h3>
+                <p class="text-gray-500 text-sm mt-2">
+                    <a href="{{ url_for('attendance.index') }}" class="text-primary hover:underline">查看详情</a>
+                </p>
+            </div>
+            <div class="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center text-amber-500">
+                <i class="fa fa-check-square-o text-xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- 待处理请假 -->
+    <div class="bg-white rounded-xl p-6 card-shadow">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-500 text-sm">进行中的请假</p>
+                <h3 class="text-3xl font-bold mt-2">{{ pending_leave }}</h3>
+                <p class="text-gray-500 text-sm mt-2">
+                    <a href="{{ url_for('leave.index') }}" class="text-primary hover:underline">查看详情</a>
+                </p>
+            </div>
+            <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center text-red-500">
+                <i class="fa fa-calendar-o text-xl"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 快捷操作区域 -->
+<div class="bg-white rounded-xl p-6 card-shadow">
+    <h3 class="text-lg font-semibold mb-4">快捷操作</h3>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <a href="{{ url_for('student.add') }}" class="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:border-primary hover:text-primary transition-colors">
+            <i class="fa fa-user-plus text-2xl mb-2"></i>
+            <span class="text-sm">添加学生</span>
+        </a>
+        <a href="#" class="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:border-gray-400 text-gray-400 cursor-not-allowed">
+            <i class="fa fa-plus-square text-2xl mb-2"></i>
+            <span class="text-sm">添加课程</span>
+        </a>
+        <a href="{{ url_for('attendance.index') }}" class="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:border-primary hover:text-primary transition-colors">
+            <i class="fa fa-pencil-square-o text-2xl mb-2"></i>
+            <span class="text-sm">记录考勤</span>
+        </a>
+        <a href="{{ url_for('leave.add') }}" class="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:border-primary hover:text-primary transition-colors">
+            <i class="fa fa-calendar-plus-o text-2xl mb-2"></i>
+            <span class="text-sm">添加请假</span>
+        </a>
+    </div>
+</div>
+
+<!-- 最近记录区域 -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- 最近考勤记录 -->
+    <div class="bg-white rounded-xl p-6 card-shadow">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold">最近考勤记录</h3>
+            <a href="{{ url_for('attendance.history') }}" class="text-primary hover:underline text-sm">查看全部</a>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead>
+                    <tr>
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">学生</th>
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">课程</th>
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">日期</th>
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200" id="recent-attendance">
+                    <!-- 示例数据 -->
+                    <tr>
+                        <td class="px-3 py-4 whitespace-nowrap">
+                            <div class="text-sm">张三 (2023001)</div>
+                        </td>
+                        <td class="px-3 py-4 whitespace-nowrap">
+                            <div class="text-sm">高等数学</div>
+                        </td>
+                        <td class="px-3 py-4 whitespace-nowrap">
+                            <div class="text-sm">2024-05-20</div>
+                        </td>
+                        <td class="px-3 py-4 whitespace-nowrap">
+                            <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">正常</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 最近请假记录 -->
+    <div class="bg-white rounded-xl p-6 card-shadow">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold">最近请假记录</h3>
+            <a href="{{ url_for('leave.index') }}" class="text-primary hover:underline text-sm">查看全部</a>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead>
+                    <tr>
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">学生</th>
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">类型</th>
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">时间</th>
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">天数</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200" id="recent-leave">
+                    <!-- 示例数据 -->
+                    <tr>
+                        <td class="px-3 py-4 whitespace-nowrap">
+                            <div class="text-sm">李四 (2023002)</div>
+                        </td>
+                        <td class="px-3 py-4 whitespace-nowrap">
+                            <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">病假</span>
+                        </td>
+                        <td class="px-3 py-4 whitespace-nowrap">
+                            <div class="text-sm">2024-05-18 至 2024-05-19</div>
+                        </td>
+                        <td class="px-3 py-4 whitespace-nowrap">
+                            <div class="text-sm">2天</div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // 页面已加载完成，数据由后端直接渲染
+</script>
+{% endblock %}

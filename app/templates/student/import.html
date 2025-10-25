@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block title %}导入学生 - 学生考勤管理系统{% endblock %}
+
+{% block page_title %}Excel导入学生{% endblock %}
+{% block page_desc %}批量导入学生信息{% endblock %}
+
+{% block content %}
+<!-- Flash消息显示 -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="space-y-2 mb-6">
+            {% for category, message in messages %}
+                <div class="flex items-center p-4 rounded-lg {% if category == 'success' %}bg-green-50 text-green-800 border border-green-200{% elif category == 'error' %}bg-red-50 text-red-800 border border-red-200{% else %}bg-yellow-50 text-yellow-800 border border-yellow-200{% endif %}">
+                    <i class="fa {% if category == 'success' %}fa-check-circle{% elif category == 'error' %}fa-times-circle{% else %}fa-exclamation-circle{% endif %} mr-2"></i>
+                    <span>{{ message }}</span>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- 上传表单 -->
+    <div class="bg-white rounded-xl p-6 card-shadow">
+        <h3 class="text-lg font-semibold mb-4 flex items-center">
+            <i class="fa fa-upload text-primary mr-2"></i>
+            上传Excel文件
+        </h3>
+        
+        <form method="POST" enctype="multipart/form-data" id="uploadForm">
+            <!-- 文件上传区域 -->
+            <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-primary transition-colors mb-6">
+                <input 
+                    type="file" 
+                    id="file" 
+                    name="file" 
+                    accept=".xlsx,.xls"
+                    required
+                    class="hidden"
+                    onchange="handleFileSelect(this)"
+                >
+                <label for="file" class="cursor-pointer">
+                    <i class="fa fa-file-excel-o text-6xl text-gray-300 mb-4"></i>
+                    <p class="text-gray-600 mb-2">点击选择Excel文件</p>
+                    <p class="text-sm text-gray-500">支持 .xlsx 或 .xls 格式</p>
+                </label>
+                <div id="fileInfo" class="hidden mt-4">
+                    <p class="text-sm text-gray-700">
+                        已选择：<span id="fileName" class="font-medium text-primary"></span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- 按钮组 -->
+            <div class="flex gap-4">
+                <button 
+                    type="submit"
+                    class="flex-1 bg-primary text-white px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors font-medium"
+                >
+                    <i class="fa fa-upload mr-2"></i>
+                    开始导入
+                </button>
+                <a 
+                    href="{{ url_for('student.index') }}"
+                    class="flex-1 bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition-colors font-medium text-center"
+                >
+                    <i class="fa fa-times mr-2"></i>
+                    取消
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- 格式说明 -->
+    <div class="space-y-6">
+        <!-- Excel格式要求 -->
+        <div class="bg-white rounded-xl p-6 card-shadow">
+            <h3 class="text-lg font-semibold mb-4 flex items-center">
+                <i class="fa fa-list-alt text-secondary mr-2"></i>
+                Excel格式要求
+            </h3>
+            <div class="space-y-3 text-sm">
+                <div class="flex items-start">
+                    <i class="fa fa-check-circle text-green-500 mr-2 mt-0.5"></i>
+                    <div>
+                        <p class="font-medium text-gray-900">第一行为表头（必填）</p>
+                        <p class="text-gray-600">A1: 学号，B1: 姓名，C1: 政治面貌，D1: 联系电话</p>
+                    </div>
+                </div>
+                <div class="flex items-start">
+                    <i class="fa fa-check-circle text-green-500 mr-2 mt-0.5"></i>
+                    <div>
+                        <p class="font-medium text-gray-900">从第二行开始为数据行</p>
+                        <p class="text-gray-600">每行一条学生记录</p>
+                    </div>
+                </div>
+                <div class="flex items-start">
+                    <i class="fa fa-check-circle text-green-500 mr-2 mt-0.5"></i>
+                    <div>
+                        <p class="font-medium text-gray-900">必填字段</p>
+                        <p class="text-gray-600">学号、姓名、联系电话为必填项</p>
+                    </div>
+                </div>
+                <div class="flex items-start">
+                    <i class="fa fa-check-circle text-green-500 mr-2 mt-0.5"></i>
+                    <div>
+                        <p class="font-medium text-gray-900">重复处理</p>
+                        <p class="text-gray-600">学号已存在时将更新该学生信息</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 示例表格 -->
+        <div class="bg-white rounded-xl p-6 card-shadow">
+            <h3 class="text-lg font-semibold mb-4 flex items-center">
+                <i class="fa fa-table text-amber-500 mr-2"></i>
+                Excel示例
+            </h3>
+            <div class="overflow-x-auto">
+                <table class="min-w-full border border-gray-200 text-sm">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="border border-gray-200 px-3 py-2 text-left font-medium">A（学号）</th>
+                            <th class="border border-gray-200 px-3 py-2 text-left font-medium">B（姓名）</th>
+                            <th class="border border-gray-200 px-3 py-2 text-left font-medium">C（政治面貌）</th>
+                            <th class="border border-gray-200 px-3 py-2 text-left font-medium">D（联系电话）</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="border border-gray-200 px-3 py-2">2023001</td>
+                            <td class="border border-gray-200 px-3 py-2">张三</td>
+                            <td class="border border-gray-200 px-3 py-2">共青团员</td>
+                            <td class="border border-gray-200 px-3 py-2">13800138001</td>
+                        </tr>
+                        <tr>
+                            <td class="border border-gray-200 px-3 py-2">2023002</td>
+                            <td class="border border-gray-200 px-3 py-2">李四</td>
+                            <td class="border border-gray-200 px-3 py-2">群众</td>
+                            <td class="border border-gray-200 px-3 py-2">13900139001</td>
+                        </tr>
+                        <tr>
+                            <td class="border border-gray-200 px-3 py-2">2023003</td>
+                            <td class="border border-gray-200 px-3 py-2">王五</td>
+                            <td class="border border-gray-200 px-3 py-2">中共党员</td>
+                            <td class="border border-gray-200 px-3 py-2">13700137001</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 注意事项 -->
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+            <div class="flex">
+                <i class="fa fa-exclamation-triangle text-amber-600 mr-3 mt-0.5"></i>
+                <div class="text-sm text-amber-800">
+                    <p class="font-medium mb-2">注意事项：</p>
+                    <ul class="list-disc list-inside space-y-1">
+                        <li>导入前请确保Excel文件格式正确</li>
+                        <li>建议先用少量数据测试</li>
+                        <li>导入过程中如遇到错误，系统会跳过错误行并继续导入</li>
+                        <li>导入完成后会显示成功和失败的记录数</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function handleFileSelect(input) {
+        if (input.files && input.files[0]) {
+            const fileName = input.files[0].name;
+            const fileSize = (input.files[0].size / 1024 / 1024).toFixed(2); // MB
+            
+            document.getElementById('fileName').textContent = `${fileName} (${fileSize} MB)`;
+            document.getElementById('fileInfo').classList.remove('hidden');
+        }
+    }
+
+    // 表单提交验证
+    document.getElementById('uploadForm').addEventListener('submit', function(e) {
+        const fileInput = document.getElementById('file');
+        if (!fileInput.files || !fileInput.files[0]) {
+            e.preventDefault();
+            alert('请选择要上传的Excel文件');
+            return false;
+        }
+
+        // 显示加载提示
+        const submitBtn = this.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i>正在导入...';
+    });
+</script>
+{% endblock %}
+

@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+
+{% block title %}请假记录 - 学生考勤管理系统{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- 页面标题 -->
+        <div class="mb-6">
+            <h1 class="text-3xl font-bold text-gray-900">请假记录</h1>
+            <p class="mt-2 text-sm text-gray-600">查看和管理学生请假记录</p>
+        </div>
+
+        <!-- 筛选和操作栏 -->
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <form method="GET" action="{{ url_for('leave.index') }}" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <!-- 搜索框 -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">搜索学生</label>
+                        <input type="text" 
+                               name="search" 
+                               value="{{ search }}" 
+                               placeholder="学号或姓名"
+                               class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+
+                    <!-- 请假类型 -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">请假类型</label>
+                        <select name="leave_type" 
+                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <option value="">全部类型</option>
+                            {% for type in leave_types %}
+                            <option value="{{ type }}" {% if leave_type == type %}selected{% endif %}>{{ type }}</option>
+                            {% endfor %}
+                            <option value="病假" {% if leave_type == '病假' %}selected{% endif %}>病假</option>
+                            <option value="事假" {% if leave_type == '事假' %}selected{% endif %}>事假</option>
+                            <option value="其他" {% if leave_type == '其他' %}selected{% endif %}>其他</option>
+                        </select>
+                    </div>
+
+                    <!-- 开始日期 -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">开始日期</label>
+                        <input type="date" 
+                               name="start_date" 
+                               value="{{ start_date }}"
+                               class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+
+                    <!-- 结束日期 -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">结束日期</label>
+                        <input type="date" 
+                               name="end_date" 
+                               value="{{ end_date }}"
+                               class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <div class="flex space-x-2">
+                        <button type="submit" 
+                                class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">
+                            查询
+                        </button>
+                        <a href="{{ url_for('leave.index') }}" 
+                           class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
+                            清空
+                        </a>
+                    </div>
+                    
+                    <div class="flex space-x-2">
+                        <a href="{{ url_for('leave.export', search=search, leave_type=leave_type, start_date=start_date, end_date=end_date) }}" 
+                           class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            导出Excel
+                        </a>
+                        <a href="{{ url_for('leave.statistics') }}" 
+                           class="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                            统计分析
+                        </a>
+                        <a href="{{ url_for('leave.add') }}" 
+                           class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                            </svg>
+                            添加请假
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- 请假记录列表 -->
+        {% if records %}
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                学生信息
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                请假类型
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                请假时间
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                天数
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                请假原因
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                提交时间
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                操作
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for record in records %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div>
+                                        <div class="text-sm font-medium text-gray-900">{{ record.student.student_name }}</div>
+                                        <div class="text-sm text-gray-500">{{ record.student.student_id }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                    {% if record.leave_type == '病假' %}bg-red-100 text-red-800
+                                    {% elif record.leave_type == '事假' %}bg-blue-100 text-blue-800
+                                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                    {{ record.leave_type }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {{ record.leave_start_date.strftime('%Y-%m-%d') }} 至 {{ record.leave_end_date.strftime('%Y-%m-%d') }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {{ record.leave_days }} 天
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-900" style="max-width: 300px;">
+                                <div class="truncate" title="{{ record.leave_reason }}">
+                                    {{ record.leave_reason }}
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ record.create_time.strftime('%Y-%m-%d %H:%M') }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                                <a href="{{ url_for('leave.edit', leave_id=record.leave_id) }}" 
+                                   class="text-blue-600 hover:text-blue-900 mr-3">编辑</a>
+                                <form action="{{ url_for('leave.delete', leave_id=record.leave_id) }}" 
+                                      method="POST" 
+                                      class="inline"
+                                      onsubmit="return confirm('确定要删除这条请假记录吗？');">
+                                    <button type="submit" class="text-red-600 hover:text-red-900">删除</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 分页 -->
+            {% if pagination.pages > 1 %}
+            <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+                <div class="flex-1 flex justify-between sm:hidden">
+                    {% if pagination.has_prev %}
+                    <a href="{{ url_for('leave.index', page=pagination.prev_num, search=search, leave_type=leave_type, start_date=start_date, end_date=end_date) }}" 
+                       class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                        上一页
+                    </a>
+                    {% endif %}
+                    {% if pagination.has_next %}
+                    <a href="{{ url_for('leave.index', page=pagination.next_num, search=search, leave_type=leave_type, start_date=start_date, end_date=end_date) }}" 
+                       class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                        下一页
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-sm text-gray-700">
+                            显示第 
+                            <span class="font-medium">{{ (pagination.page - 1) * pagination.per_page + 1 }}</span>
+                            到 
+                            <span class="font-medium">{{ min(pagination.page * pagination.per_page, pagination.total) }}</span> 
+                            条，共 
+                            <span class="font-medium">{{ pagination.total }}</span> 
+                            条记录
+                        </p>
+                    </div>
+                    <div>
+                        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                            {% if pagination.has_prev %}
+                            <a href="{{ url_for('leave.index', page=pagination.prev_num, search=search, leave_type=leave_type, start_date=start_date, end_date=end_date) }}" 
+                               class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                上一页
+                            </a>
+                            {% endif %}
+                            
+                            {% for page_num in range(max(1, pagination.page - 2), min(pagination.pages, pagination.page + 2) + 1) %}
+                                {% if page_num == pagination.page %}
+                                <span class="relative inline-flex items-center px-4 py-2 border border-blue-500 bg-blue-50 text-sm font-medium text-blue-600">
+                                    {{ page_num }}
+                                </span>
+                                {% else %}
+                                <a href="{{ url_for('leave.index', page=page_num, search=search, leave_type=leave_type, start_date=start_date, end_date=end_date) }}" 
+                                   class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                    {{ page_num }}
+                                </a>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if pagination.has_next %}
+                            <a href="{{ url_for('leave.index', page=pagination.next_num, search=search, leave_type=leave_type, start_date=start_date, end_date=end_date) }}" 
+                               class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                下一页
+                            </a>
+                            {% endif %}
+                        </nav>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="bg-white rounded-lg shadow-sm p-12 text-center">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">暂无请假记录</h3>
+            <p class="mt-1 text-sm text-gray-500">请调整筛选条件或添加新的请假记录</p>
+            <div class="mt-6">
+                <a href="{{ url_for('leave.add') }}" 
+                   class="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    添加请假记录
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

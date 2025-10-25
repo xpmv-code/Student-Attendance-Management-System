@@ -1,0 +1,6 @@
+Flask==2.3.3
+Flask-SQLAlchemy==3.1.1
+psycopg2-binary==2.9.9  # PostgreSQL数据库驱动
+python-dotenv==1.0.0    # 环境变量管理
+openpyxl==3.1.2         # Excel文件处理
+icalendar==5.0.11       # ICS文件解析

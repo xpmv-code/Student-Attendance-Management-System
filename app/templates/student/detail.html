@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+
+{% block title %}学生详情 - 学生考勤管理系统{% endblock %}
+
+{% block page_title %}学生详情{% endblock %}
+{% block page_desc %}查看学生信息及考勤统计{% endblock %}
+
+{% block content %}
+<!-- 返回按钮 -->
+<div class="mb-4">
+    <a href="{{ url_for('student.index') }}" class="text-primary hover:text-primary/80 flex items-center gap-2">
+        <i class="fa fa-arrow-left"></i>
+        <span>返回学生列表</span>
+    </a>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- 左侧：学生基本信息 -->
+    <div class="lg:col-span-1">
+        <div class="bg-white rounded-xl p-6 card-shadow">
+            <div class="text-center mb-6">
+                <div class="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-primary text-3xl font-bold mx-auto mb-4">
+                    {{ student.student_name[0] if student.student_name else '?' }}
+                </div>
+                <h3 class="text-xl font-bold text-gray-900">{{ student.student_name }}</h3>
+                <p class="text-gray-500 mt-1">{{ student.student_id }}</p>
+            </div>
+
+            <div class="space-y-4 border-t pt-6">
+                <div class="flex items-start">
+                    <i class="fa fa-id-card w-5 text-gray-400 mr-3 mt-1"></i>
+                    <div class="flex-1">
+                        <p class="text-sm text-gray-500">学号</p>
+                        <p class="text-gray-900 font-medium">{{ student.student_id }}</p>
+                    </div>
+                </div>
+
+                <div class="flex items-start">
+                    <i class="fa fa-user w-5 text-gray-400 mr-3 mt-1"></i>
+                    <div class="flex-1">
+                        <p class="text-sm text-gray-500">姓名</p>
+                        <p class="text-gray-900 font-medium">{{ student.student_name }}</p>
+                    </div>
+                </div>
+
+                <div class="flex items-start">
+                    <i class="fa fa-flag w-5 text-gray-400 mr-3 mt-1"></i>
+                    <div class="flex-1">
+                        <p class="text-sm text-gray-500">政治面貌</p>
+                        <p class="text-gray-900 font-medium">{{ student.political_status or '未填写' }}</p>
+                    </div>
+                </div>
+
+                <div class="flex items-start">
+                    <i class="fa fa-phone w-5 text-gray-400 mr-3 mt-1"></i>
+                    <div class="flex-1">
+                        <p class="text-sm text-gray-500">联系电话</p>
+                        <p class="text-gray-900 font-medium">{{ student.phone }}</p>
+                    </div>
+                </div>
+
+                <div class="flex items-start">
+                    <i class="fa fa-clock-o w-5 text-gray-400 mr-3 mt-1"></i>
+                    <div class="flex-1">
+                        <p class="text-sm text-gray-500">创建时间</p>
+                        <p class="text-gray-900 font-medium">{{ student.create_time.strftime('%Y-%m-%d %H:%M') if student.create_time else '-' }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="flex gap-3 mt-6 pt-6 border-t">
+                <a href="{{ url_for('student.edit', student_id=student.student_id) }}" 
+                   class="flex-1 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors text-center">
+                    <i class="fa fa-edit mr-1"></i>
+                    编辑
+                </a>
+                <button onclick="confirmDelete('{{ student.student_id }}', '{{ student.student_name }}')" 
+                        class="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors">
+                    <i class="fa fa-trash mr-1"></i>
+                    删除
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 右侧：统计信息 -->
+    <div class="lg:col-span-2 space-y-6">
+        <!-- 统计卡片 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- 考勤统计 -->
+            <div class="bg-white rounded-xl p-6 card-shadow">
+                <div class="flex items-center justify-between mb-4">
+                    <h4 class="text-lg font-semibold">考勤统计</h4>
+                    <i class="fa fa-check-square-o text-2xl text-primary"></i>
+                </div>
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-gray-600">总考勤次数</span>
+                        <span class="text-2xl font-bold text-gray-900">{{ attendance_stats.total }}</span>
+                    </div>
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-green-600">正常</span>
+                        <span class="font-semibold">{{ attendance_stats.normal }}</span>
+                    </div>
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-amber-600">迟到</span>
+                        <span class="font-semibold">{{ attendance_stats.late }}</span>
+                    </div>
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-red-600">缺席</span>
+                        <span class="font-semibold">{{ attendance_stats.absent }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 请假统计 -->
+            <div class="bg-white rounded-xl p-6 card-shadow">
+                <div class="flex items-center justify-between mb-4">
+                    <h4 class="text-lg font-semibold">请假统计</h4>
+                    <i class="fa fa-calendar-o text-2xl text-secondary"></i>
+                </div>
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-gray-600">请假次数</span>
+                        <span class="text-2xl font-bold text-gray-900">{{ leave_stats.total }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 最近考勤记录 -->
+        <div class="bg-white rounded-xl p-6 card-shadow">
+            <div class="flex items-center justify-between mb-4">
+                <h4 class="text-lg font-semibold">最近考勤记录</h4>
+                <a href="#" class="text-primary text-sm hover:underline">查看全部</a>
+            </div>
+            {% if recent_attendances %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">日期</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">课程</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">状态</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">备注</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            {% for attendance in recent_attendances %}
+                            <tr>
+                                <td class="px-4 py-3 text-sm">{{ attendance.attendance_date.strftime('%Y-%m-%d') }}</td>
+                                <td class="px-4 py-3 text-sm">{{ attendance.course.course_name }}</td>
+                                <td class="px-4 py-3">
+                                    <span class="px-2 py-1 text-xs rounded-full
+                                        {% if attendance.attendance_type == '正常' %}bg-green-100 text-green-800
+                                        {% elif attendance.attendance_type == '迟到' %}bg-amber-100 text-amber-800
+                                        {% elif attendance.attendance_type == '缺席' %}bg-red-100 text-red-800
+                                        {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                        {{ attendance.attendance_type }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3 text-sm text-gray-500">{{ attendance.attendance_note or '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-center text-gray-500 py-8">暂无考勤记录</p>
+            {% endif %}
+        </div>
+
+        <!-- 最近请假记录 -->
+        <div class="bg-white rounded-xl p-6 card-shadow">
+            <div class="flex items-center justify-between mb-4">
+                <h4 class="text-lg font-semibold">最近请假记录</h4>
+                <a href="#" class="text-primary text-sm hover:underline">查看全部</a>
+            </div>
+            {% if recent_leaves %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">类型</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">时间</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">天数</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">原因</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            {% for leave in recent_leaves %}
+                            <tr>
+                                <td class="px-4 py-3">
+                                    <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
+                                        {{ leave.leave_type }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3 text-sm">{{ leave.leave_start_date.strftime('%Y-%m-%d') }} 至 {{ leave.leave_end_date.strftime('%Y-%m-%d') }}</td>
+                                <td class="px-4 py-3 text-sm">{{ leave.leave_days }} 天</td>
+                                <td class="px-4 py-3 text-sm text-gray-500">{{ leave.leave_reason[:20] }}{% if leave.leave_reason|length > 20 %}...{% endif %}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-center text-gray-500 py-8">暂无请假记录</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- 删除确认模态框 -->
+<div id="deleteModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+        <div class="flex items-center mb-4">
+            <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center text-red-600 mr-4">
+                <i class="fa fa-exclamation-triangle text-xl"></i>
+            </div>
+            <div>
+                <h3 class="text-lg font-semibold text-gray-900">确认删除</h3>
+                <p class="text-sm text-gray-500 mt-1">此操作将同时删除该学生的所有考勤和请假记录</p>
+            </div>
+        </div>
+        <p class="text-gray-700 mb-6">
+            确定要删除学生 <strong id="deleteStudentName"></strong> 吗？
+        </p>
+        <div class="flex gap-3 justify-end">
+            <button onclick="closeDeleteModal()" 
+                    class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                取消
+            </button>
+            <form id="deleteForm" method="POST" style="display: inline;">
+                <button type="submit" 
+                        class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                    确认删除
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function confirmDelete(studentId, studentName) {
+        document.getElementById('deleteStudentName').textContent = studentName;
+        document.getElementById('deleteForm').action = "{{ url_for('student.delete', student_id='STUDENT_ID') }}".replace('STUDENT_ID', studentId);
+        document.getElementById('deleteModal').classList.remove('hidden');
+    }
+    
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').classList.add('hidden');
+    }
+    
+    // 点击模态框外部关闭
+    document.getElementById('deleteModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeDeleteModal();
+        }
+    });
+</script>
+{% endblock %}
+

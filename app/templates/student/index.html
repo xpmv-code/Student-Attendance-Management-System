@@ -1,0 +1,287 @@
+{% extends "base.html" %}
+
+{% block title %}学生管理 - 学生考勤管理系统{% endblock %}
+
+{% block page_title %}学生管理{% endblock %}
+{% block page_desc %}管理学生信息，支持批量导入{% endblock %}
+
+{% block content %}
+<!-- Flash消息显示 -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="space-y-2 mb-6">
+            {% for category, message in messages %}
+                <div class="flex items-center p-4 rounded-lg {% if category == 'success' %}bg-green-50 text-green-800 border border-green-200{% elif category == 'error' %}bg-red-50 text-red-800 border border-red-200{% else %}bg-yellow-50 text-yellow-800 border border-yellow-200{% endif %}">
+                    <i class="fa {% if category == 'success' %}fa-check-circle{% elif category == 'error' %}fa-times-circle{% else %}fa-exclamation-circle{% endif %} mr-2"></i>
+                    <span>{{ message }}</span>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
+
+<!-- 操作栏 -->
+<div class="bg-white rounded-xl p-4 card-shadow mb-6">
+    <form method="GET" action="{{ url_for('student.index') }}" id="filterForm">
+        <div class="flex flex-col gap-4">
+            <!-- 第一行：搜索和筛选 -->
+            <div class="flex flex-col sm:flex-row gap-3">
+                <!-- 搜索框 -->
+                <div class="flex-1 relative">
+                    <input 
+                        type="text" 
+                        name="search" 
+                        value="{{ search }}" 
+                        placeholder="搜索学号、姓名或电话..." 
+                        class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                    >
+                    <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                </div>
+                
+                <!-- 政治面貌筛选 -->
+                <div class="w-full sm:w-48">
+                    <select 
+                        name="political_status"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                        onchange="document.getElementById('filterForm').submit()"
+                    >
+                        <option value="">全部政治面貌</option>
+                        {% for ps in political_statuses %}
+                            <option value="{{ ps }}" {% if political_status == ps %}selected{% endif %}>{{ ps }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- 筛选按钮 -->
+                <button 
+                    type="submit"
+                    class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors whitespace-nowrap"
+                >
+                    <i class="fa fa-filter mr-1"></i>
+                    <span>筛选</span>
+                </button>
+                
+                <!-- 清除筛选 -->
+                {% if search or political_status %}
+                <a 
+                    href="{{ url_for('student.index') }}"
+                    class="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors whitespace-nowrap text-center"
+                >
+                    <i class="fa fa-times mr-1"></i>
+                    <span>清除</span>
+                </a>
+                {% endif %}
+            </div>
+            
+            <!-- 第二行：操作按钮 -->
+            <div class="flex flex-wrap gap-3">
+                <!-- 导出按钮 -->
+                <a 
+                    href="{{ url_for('student.export', search=search, political_status=political_status) }}" 
+                    class="btn-export flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                    {% if not students %}disabled{% endif %}
+                >
+                    <i class="fa fa-download"></i>
+                    <span>导出Excel</span>
+                    {% if pagination.total > 0 %}
+                        <span class="text-xs bg-white/20 px-2 py-0.5 rounded-full">({{ pagination.total }}条)</span>
+                    {% endif %}
+                </a>
+                
+                <a href="{{ url_for('student.import_excel') }}" class="btn-secondary flex items-center gap-2 px-4 py-2 bg-secondary/10 text-secondary rounded-lg hover:bg-secondary/20 transition-colors">
+                    <i class="fa fa-file-excel-o"></i>
+                    <span>导入Excel</span>
+                </a>
+                
+                <a href="{{ url_for('student.add') }}" class="btn-primary flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                    <i class="fa fa-plus"></i>
+                    <span>添加学生</span>
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- 筛选结果提示 -->
+{% if search or political_status %}
+<div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 flex items-center justify-between">
+    <div class="flex items-center text-blue-800">
+        <i class="fa fa-info-circle mr-2"></i>
+        <span class="text-sm">
+            当前筛选条件：
+            {% if search %}
+                <strong>搜索"{{ search }}"</strong>
+            {% endif %}
+            {% if search and political_status %}
+                、
+            {% endif %}
+            {% if political_status %}
+                <strong>政治面貌"{{ political_status }}"</strong>
+            {% endif %}
+            - 共找到 <strong>{{ pagination.total }}</strong> 条记录
+        </span>
+    </div>
+</div>
+{% endif %}
+
+<!-- 学生列表 -->
+<div class="bg-white rounded-xl card-shadow overflow-hidden">
+    {% if students %}
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">学号</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">姓名</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">政治面貌</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">联系电话</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">创建时间</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for student in students %}
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">{{ student.student_id }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">{{ student.student_name }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-500">{{ student.political_status or '-' }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">{{ student.phone }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-500">{{ student.create_time.strftime('%Y-%m-%d %H:%M') if student.create_time else '-' }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <div class="flex items-center justify-end gap-2">
+                                <a href="{{ url_for('student.detail', student_id=student.student_id) }}" 
+                                   class="text-blue-600 hover:text-blue-900 p-2" 
+                                   title="查看详情">
+                                    <i class="fa fa-eye"></i>
+                                </a>
+                                <a href="{{ url_for('student.edit', student_id=student.student_id) }}" 
+                                   class="text-primary hover:text-primary/80 p-2" 
+                                   title="编辑">
+                                    <i class="fa fa-edit"></i>
+                                </a>
+                                <button onclick="confirmDelete('{{ student.student_id }}', '{{ student.student_name }}')" 
+                                        class="text-red-600 hover:text-red-900 p-2" 
+                                        title="删除">
+                                    <i class="fa fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- 分页 -->
+        {% if pagination.pages > 1 %}
+        <div class="bg-gray-50 px-6 py-4 border-t border-gray-200">
+            <div class="flex items-center justify-between">
+                <div class="text-sm text-gray-700">
+                    显示第 {{ (pagination.page - 1) * pagination.per_page + 1 }} 
+                    到 {{ min(pagination.page * pagination.per_page, pagination.total) }} 条，
+                    共 {{ pagination.total }} 条记录
+                </div>
+                <div class="flex gap-2">
+                    {% if pagination.has_prev %}
+                        <a href="{{ url_for('student.index', page=pagination.prev_num, search=search, political_status=political_status) }}" 
+                           class="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100">
+                            上一页
+                        </a>
+                    {% endif %}
+                    
+                    {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                        {% if page_num %}
+                            <a href="{{ url_for('student.index', page=page_num, search=search, political_status=political_status) }}" 
+                               class="px-3 py-1 border rounded {% if page_num == pagination.page %}bg-primary text-white border-primary{% else %}border-gray-300 hover:bg-gray-100{% endif %}">
+                                {{ page_num }}
+                            </a>
+                        {% else %}
+                            <span class="px-3 py-1">...</span>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if pagination.has_next %}
+                        <a href="{{ url_for('student.index', page=pagination.next_num, search=search, political_status=political_status) }}" 
+                           class="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100">
+                            下一页
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    {% else %}
+        <div class="text-center py-12">
+            <i class="fa fa-users text-6xl text-gray-300 mb-4"></i>
+            <p class="text-gray-500 text-lg mb-4">暂无学生数据</p>
+            {% if search %}
+                <a href="{{ url_for('student.index') }}" class="text-primary hover:underline">清除搜索条件</a>
+            {% else %}
+                <a href="{{ url_for('student.add') }}" class="text-primary hover:underline">立即添加学生</a>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+
+<!-- 删除确认模态框 -->
+<div id="deleteModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+        <div class="flex items-center mb-4">
+            <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center text-red-600 mr-4">
+                <i class="fa fa-exclamation-triangle text-xl"></i>
+            </div>
+            <div>
+                <h3 class="text-lg font-semibold text-gray-900">确认删除</h3>
+                <p class="text-sm text-gray-500 mt-1">此操作将同时删除该学生的所有考勤和请假记录</p>
+            </div>
+        </div>
+        <p class="text-gray-700 mb-6">
+            确定要删除学生 <strong id="deleteStudentName"></strong> 吗？
+        </p>
+        <div class="flex gap-3 justify-end">
+            <button onclick="closeDeleteModal()" 
+                    class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                取消
+            </button>
+            <form id="deleteForm" method="POST" style="display: inline;">
+                <button type="submit" 
+                        class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                    确认删除
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function confirmDelete(studentId, studentName) {
+        document.getElementById('deleteStudentName').textContent = studentName;
+        document.getElementById('deleteForm').action = "{{ url_for('student.delete', student_id='STUDENT_ID') }}".replace('STUDENT_ID', studentId);
+        document.getElementById('deleteModal').classList.remove('hidden');
+    }
+    
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').classList.add('hidden');
+    }
+    
+    // 点击模态框外部关闭
+    document.getElementById('deleteModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeDeleteModal();
+        }
+    });
+</script>
+{% endblock %}
+

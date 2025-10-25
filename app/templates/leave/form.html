@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}{% if record %}编辑请假记录{% else %}添加请假记录{% endif %} - 学生考勤管理系统{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- 页面标题 -->
+        <div class="mb-6">
+            <div class="flex items-center text-sm text-gray-500 mb-2">
+                <a href="{{ url_for('leave.index') }}" class="hover:text-blue-600">请假记录</a>
+                <svg class="w-4 h-4 mx-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+                <span>{% if record %}编辑{% else %}添加{% endif %}请假记录</span>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-900">
+                {% if record %}编辑请假记录{% else %}添加请假记录{% endif %}
+            </h1>
+        </div>
+
+        <!-- 表单 -->
+        <div class="bg-white rounded-lg shadow-sm p-6">
+            <form method="POST" action="{% if record %}{{ url_for('leave.edit', leave_id=record.leave_id) }}{% else %}{{ url_for('leave.add') }}{% endif %}">
+                <div class="space-y-6">
+                    <!-- 学生选择 -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            学生 <span class="text-red-500">*</span>
+                        </label>
+                        <select name="student_id" 
+                                required
+                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <option value="">请选择学生</option>
+                            {% for student in students %}
+                            <option value="{{ student.student_id }}" 
+                                    {% if record and record.student_id == student.student_id %}selected{% endif %}>
+                                {{ student.student_id }} - {{ student.student_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <p class="mt-1 text-sm text-gray-500">选择请假的学生</p>
+                    </div>
+
+                    <!-- 请假类型 -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            请假类型 <span class="text-red-500">*</span>
+                        </label>
+                        <select name="leave_type" 
+                                required
+                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <option value="">请选择类型</option>
+                            <option value="病假" {% if record and record.leave_type == '病假' %}selected{% endif %}>病假</option>
+                            <option value="事假" {% if record and record.leave_type == '事假' %}selected{% endif %}>事假</option>
+                            <option value="其他" {% if record and record.leave_type == '其他' %}selected{% endif %}>其他</option>
+                        </select>
+                    </div>
+
+                    <!-- 请假日期 -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                开始日期 <span class="text-red-500">*</span>
+                            </label>
+                            <input type="date" 
+                                   name="leave_start_date" 
+                                   required
+                                   value="{% if record %}{{ record.leave_start_date.strftime('%Y-%m-%d') }}{% endif %}"
+                                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                结束日期 <span class="text-red-500">*</span>
+                            </label>
+                            <input type="date" 
+                                   name="leave_end_date" 
+                                   required
+                                   value="{% if record %}{{ record.leave_end_date.strftime('%Y-%m-%d') }}{% endif %}"
+                                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                    </div>
+
+                    <!-- 请假原因 -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            请假原因 <span class="text-red-500">*</span>
+                        </label>
+                        <textarea name="leave_reason" 
+                                  required
+                                  rows="4"
+                                  placeholder="请输入请假原因..."
+                                  class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">{% if record %}{{ record.leave_reason }}{% endif %}</textarea>
+                        <p class="mt-1 text-sm text-gray-500">详细说明请假原因</p>
+                    </div>
+
+                    <!-- 提示信息 -->
+                    <div class="bg-blue-50 border-l-4 border-blue-400 p-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-blue-700">
+                                    请假天数将根据开始和结束日期自动计算。系统会自动记录提交时间。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 按钮组 -->
+                    <div class="flex items-center justify-between pt-4 border-t border-gray-200">
+                        <a href="{{ url_for('leave.index') }}" 
+                           class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition">
+                            取消
+                        </a>
+                        <button type="submit" 
+                                class="px-8 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition font-medium">
+                            {% if record %}更新{% else %}添加{% endif %}
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// 日期验证
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const startDate = document.querySelector('input[name="leave_start_date"]');
+    const endDate = document.querySelector('input[name="leave_end_date"]');
+    
+    form.addEventListener('submit', function(e) {
+        if (new Date(endDate.value) < new Date(startDate.value)) {
+            e.preventDefault();
+            alert('结束日期不能早于开始日期');
+            return false;
+        }
+    });
+    
+    // 自动设置结束日期为开始日期
+    startDate.addEventListener('change', function() {
+        if (!endDate.value || new Date(endDate.value) < new Date(this.value)) {
+            endDate.value = this.value;
+        }
+    });
+});
+</script>
+{% endblock %}
+

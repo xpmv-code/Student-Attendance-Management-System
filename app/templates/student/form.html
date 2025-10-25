@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}{% if action == 'add' %}添加学生{% else %}编辑学生{% endif %} - 学生考勤管理系统{% endblock %}
+
+{% block page_title %}{% if action == 'add' %}添加学生{% else %}编辑学生{% endif %}{% endblock %}
+{% block page_desc %}{% if action == 'add' %}填写学生基本信息{% else %}修改学生信息{% endif %}{% endblock %}
+
+{% block content %}
+<!-- Flash消息显示 -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="space-y-2 mb-6">
+            {% for category, message in messages %}
+                <div class="flex items-center p-4 rounded-lg {% if category == 'success' %}bg-green-50 text-green-800 border border-green-200{% elif category == 'error' %}bg-red-50 text-red-800 border border-red-200{% else %}bg-yellow-50 text-yellow-800 border border-yellow-200{% endif %}">
+                    <i class="fa {% if category == 'success' %}fa-check-circle{% elif category == 'error' %}fa-times-circle{% else %}fa-exclamation-circle{% endif %} mr-2"></i>
+                    <span>{{ message }}</span>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
+
+<!-- 表单卡片 -->
+<div class="bg-white rounded-xl p-6 card-shadow max-w-2xl">
+    <form method="POST" class="space-y-6">
+        <!-- 学号 -->
+        <div>
+            <label for="student_id" class="block text-sm font-medium text-gray-700 mb-2">
+                学号 <span class="text-red-500">*</span>
+            </label>
+            <input 
+                type="text" 
+                id="student_id" 
+                name="student_id" 
+                value="{{ student.student_id if student else '' }}"
+                {% if action == 'edit' %}readonly{% endif %}
+                required
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent {% if action == 'edit' %}bg-gray-100 cursor-not-allowed{% endif %}"
+                placeholder="请输入学号"
+            >
+            {% if action == 'edit' %}
+                <p class="mt-1 text-sm text-gray-500">学号不可修改</p>
+            {% endif %}
+        </div>
+
+        <!-- 姓名 -->
+        <div>
+            <label for="student_name" class="block text-sm font-medium text-gray-700 mb-2">
+                姓名 <span class="text-red-500">*</span>
+            </label>
+            <input 
+                type="text" 
+                id="student_name" 
+                name="student_name" 
+                value="{{ student.student_name if student else '' }}"
+                required
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                placeholder="请输入姓名"
+            >
+        </div>
+
+        <!-- 政治面貌 -->
+        <div>
+            <label for="political_status" class="block text-sm font-medium text-gray-700 mb-2">
+                政治面貌
+            </label>
+            <select 
+                id="political_status" 
+                name="political_status"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+            >
+                <option value="">请选择</option>
+                <option value="群众" {% if student and student.political_status == '群众' %}selected{% endif %}>群众</option>
+                <option value="共青团员" {% if student and student.political_status == '共青团员' %}selected{% endif %}>共青团员</option>
+                <option value="中共党员" {% if student and student.political_status == '中共党员' %}selected{% endif %}>中共党员</option>
+                <option value="民主党派" {% if student and student.political_status == '民主党派' %}selected{% endif %}>民主党派</option>
+            </select>
+        </div>
+
+        <!-- 联系电话 -->
+        <div>
+            <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">
+                联系电话 <span class="text-red-500">*</span>
+            </label>
+            <input 
+                type="tel" 
+                id="phone" 
+                name="phone" 
+                value="{{ student.phone if student else '' }}"
+                required
+                pattern="[0-9]{11}"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                placeholder="请输入11位手机号"
+            >
+            <p class="mt-1 text-sm text-gray-500">请输入11位手机号码</p>
+        </div>
+
+        <!-- 按钮组 -->
+        <div class="flex gap-4 pt-4">
+            <button 
+                type="submit"
+                class="flex-1 bg-primary text-white px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors font-medium"
+            >
+                <i class="fa fa-save mr-2"></i>
+                {% if action == 'add' %}添加学生{% else %}保存修改{% endif %}
+            </button>
+            <a 
+                href="{{ url_for('student.index') }}"
+                class="flex-1 bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition-colors font-medium text-center"
+            >
+                <i class="fa fa-times mr-2"></i>
+                取消
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- 提示信息 -->
+<div class="bg-blue-50 border border-blue-200 rounded-xl p-4 max-w-2xl mt-6">
+    <div class="flex">
+        <i class="fa fa-info-circle text-blue-600 mr-3 mt-0.5"></i>
+        <div class="text-sm text-blue-800">
+            <p class="font-medium mb-1">温馨提示：</p>
+            <ul class="list-disc list-inside space-y-1">
+                <li>标有 <span class="text-red-500">*</span> 的为必填项</li>
+                <li>学号作为主键，添加后不可修改</li>
+                <li>联系电话请填写11位手机号码</li>
+                {% if action == 'add' %}
+                <li>如需批量添加学生，可使用 <a href="{{ url_for('student.import_excel') }}" class="text-blue-600 hover:underline">Excel导入</a> 功能</li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // 表单验证
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const phone = document.getElementById('phone').value;
+        if (!/^[0-9]{11}$/.test(phone)) {
+            e.preventDefault();
+            alert('请输入正确的11位手机号码');
+            document.getElementById('phone').focus();
+        }
+    });
+</script>
+{% endblock %}
+
