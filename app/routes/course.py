@@ -59,6 +59,7 @@ def _format_week_range(weeks):
 
 
 @course_bp.route('/')
+@login_required
 def index():
     """课程列表页面"""
     # 获取查询参数
@@ -122,6 +123,7 @@ def index():
 
 
 @course_bp.route('/import', methods=['GET', 'POST'])
+@login_required
 def import_ics():
     """从ICS文件导入课程"""
     if request.method == 'POST':
@@ -252,6 +254,7 @@ def import_ics():
 
 
 @course_bp.route('/detail/<course_id>')
+@login_required
 def detail(course_id):
     """课程详情和考勤统计"""
     course = Course.query.get_or_404(course_id)
@@ -310,6 +313,7 @@ def detail(course_id):
 
 
 @course_bp.route('/export_attendance')
+@login_required
 def export_attendance():
     """导出课程考勤数据"""
     course_id = request.args.get('course_id', '', type=str)
@@ -424,6 +428,7 @@ def export_attendance():
 
 
 @course_bp.route('/delete/<course_id>', methods=['POST'])
+@login_required
 def delete(course_id):
     """删除课程"""
     course = Course.query.get_or_404(course_id)
@@ -441,6 +446,7 @@ def delete(course_id):
 
 
 @course_bp.route('/today')
+@login_required
 def today_attendance():
     """查看今日所有课程考勤"""
     today = date.today()

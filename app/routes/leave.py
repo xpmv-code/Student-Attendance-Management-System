@@ -17,6 +17,7 @@ from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 leave_bp = Blueprint('leave', __name__)
 
 @leave_bp.route('/')
+@login_required
 def index():
     """请假记录列表"""
     # 获取查询参数
@@ -83,6 +84,7 @@ def index():
 
 
 @leave_bp.route('/add', methods=['GET', 'POST'])
+@login_required
 def add():
     """添加请假记录"""
     if request.method == 'POST':
@@ -145,6 +147,7 @@ def add():
 
 
 @leave_bp.route('/edit/<int:leave_id>', methods=['GET', 'POST'])
+@login_required
 def edit(leave_id):
     """编辑请假记录"""
     record = LeaveRecord.query.get_or_404(leave_id)
@@ -206,6 +209,7 @@ def edit(leave_id):
 
 
 @leave_bp.route('/delete/<int:leave_id>', methods=['POST'])
+@login_required
 def delete(leave_id):
     """删除请假记录"""
     record = LeaveRecord.query.get_or_404(leave_id)
@@ -222,6 +226,7 @@ def delete(leave_id):
 
 
 @leave_bp.route('/statistics')
+@login_required
 def statistics():
     """请假统计"""
     # 获取筛选参数
@@ -298,6 +303,7 @@ def statistics():
 
 
 @leave_bp.route('/export')
+@login_required
 def export():
     """导出请假记录"""
     # 获取筛选参数
