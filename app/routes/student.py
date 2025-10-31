@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, send_file
+from flask_login import login_required
 from app import db
 from app.models import Student
 from werkzeug.utils import secure_filename
@@ -20,6 +21,7 @@ def allowed_file(filename):
 
 
 @student_bp.route('/')
+@login_required
 def index():
     """学生列表页面"""
     # 获取查询参数
@@ -70,6 +72,7 @@ def index():
 
 
 @student_bp.route('/add', methods=['GET', 'POST'])
+@login_required
 def add():
     """添加学生"""
     if request.method == 'POST':
@@ -119,6 +122,7 @@ def add():
 
 
 @student_bp.route('/edit/<student_id>', methods=['GET', 'POST'])
+@login_required
 def edit(student_id):
     """编辑学生信息"""
     student = Student.query.get_or_404(student_id)
@@ -155,6 +159,7 @@ def edit(student_id):
 
 
 @student_bp.route('/delete/<student_id>', methods=['POST'])
+@login_required
 def delete(student_id):
     """删除学生"""
     student = Student.query.get_or_404(student_id)
@@ -172,6 +177,7 @@ def delete(student_id):
 
 
 @student_bp.route('/import', methods=['GET', 'POST'])
+@login_required
 def import_excel():
     """从Excel导入学生信息"""
     if request.method == 'POST':
@@ -277,6 +283,7 @@ def import_excel():
 
 
 @student_bp.route('/export')
+@login_required
 def export():
     """导出学生名单为Excel文件"""
     # 获取查询参数（与列表页面相同）
@@ -359,6 +366,7 @@ def export():
 
 
 @student_bp.route('/detail/<student_id>')
+@login_required
 def detail(student_id):
     """查看学生详情"""
     from app.models import Attendance, LeaveRecord

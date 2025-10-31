@@ -81,11 +81,11 @@ brew services start postgresql
 sudo -u postgres psql
 
 # 创建数据库
-CREATE DATABASE student_attendance;
+CREATE DATABASE attendance_db;
 
 # 创建用户（可选）
 CREATE USER attendance_user WITH PASSWORD 'your_password';
-GRANT ALL PRIVILEGES ON DATABASE student_attendance TO attendance_user;
+GRANT ALL PRIVILEGES ON DATABASE attendance_db TO attendance_user;
 
 # 退出
 \q

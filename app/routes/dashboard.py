@@ -2,6 +2,7 @@
 数据概览路由模块
 """
 from flask import Blueprint, render_template, jsonify
+from flask_login import login_required
 from datetime import datetime, date, timedelta
 from sqlalchemy import func, and_, or_
 
@@ -15,6 +16,7 @@ from app.utils.week_helper import get_current_week, get_week_number
 dashboard_bp = Blueprint('dashboard', __name__)
 
 @dashboard_bp.route('/')
+@login_required
 def index():
     """数据概览仪表盘"""
     # 获取基础统计数据
@@ -34,12 +36,14 @@ def index():
     )
 
 @dashboard_bp.route('/api/stats')
+@login_required
 def api_stats():
     """API接口：获取统计数据"""
     stats = get_basic_stats()
     return jsonify(stats)
 
 @dashboard_bp.route('/api/charts')
+@login_required
 def api_charts():
     """API接口：获取图表数据"""
     chart_data = get_chart_data()

@@ -1,155 +1,222 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{% block title %}学生考勤管理系统{% endblock %}</title>
     <!-- 引入Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 引入Font Awesome图标 -->
-    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
-    
+    <link
+      href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css"
+      rel="stylesheet"
+    />
+
     <!-- 自定义Tailwind配置 -->
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#165DFF',
-                        secondary: '#36CFC9',
-                        neutral: '#F5F7FA',
-                        dark: '#1D2129',
-                        'gray-light': '#C9CDD4',
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'system-ui', 'sans-serif'],
-                    },
-                }
-            }
-        }
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: "#165DFF",
+              secondary: "#36CFC9",
+              neutral: "#F5F7FA",
+              dark: "#1D2129",
+              "gray-light": "#C9CDD4",
+            },
+            fontFamily: {
+              sans: ["Inter", "system-ui", "sans-serif"],
+            },
+          },
+        },
+      };
     </script>
-    
-    <style type="text/tailwindcss">
-        @layer utilities {
-            .content-auto {
-                content-visibility: auto;
-            }
-            .sidebar-item {
-                @apply flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-primary/10 hover:text-primary rounded-lg transition-all duration-200;
-            }
-            .sidebar-item.active {
-                @apply bg-primary/10 text-primary font-medium border-l-4 border-primary;
-            }
-            .card-shadow {
-                @apply shadow-sm hover:shadow-md transition-shadow duration-300;
-            }
-        }
-    </style>
-</head>
 
-<body class="bg-gray-50 text-dark min-h-screen flex flex-col">
+    <style type="text/tailwindcss">
+      @layer utilities {
+        .content-auto {
+          content-visibility: auto;
+        }
+        .sidebar-item {
+          @apply flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-primary/10 hover:text-primary rounded-lg transition-all duration-200;
+        }
+        .sidebar-item.active {
+          @apply bg-primary/10 text-primary font-medium border-l-4 border-primary;
+        }
+        .card-shadow {
+          @apply shadow-sm hover:shadow-md transition-shadow duration-300;
+        }
+      }
+    </style>
+  </head>
+
+  <body class="bg-gray-50 text-dark min-h-screen flex flex-col">
     <!-- 顶部导航栏 -->
-    <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
-        <div class="container mx-auto px-4">
-            <div class="flex items-center justify-between h-16">
-                <!-- 左侧Logo和标题 -->
-                <div class="flex items-center gap-3">
-                    <div class="text-primary text-2xl">
-                        <i class="fa fa-graduation-cap"></i>
-                    </div>
-                    <h1 class="text-xl font-semibold">学生考勤管理系统</h1>
-                </div>
-                
-                <!-- 右侧功能区 -->
-                <div class="flex items-center gap-6">
-                    <!-- 返回首页按钮 -->
-                    <a href="{{ url_for('index') }}" class="flex items-center gap-1 text-gray-600 hover:text-primary transition-colors">
-                        <i class="fa fa-home"></i>
-                        <span>首页</span>
-                    </a>
-                    
-                    <!-- 时间显示 -->
-                    <div class="text-sm text-gray-500" id="current-time"></div>
-                </div>
+    <header
+      class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30"
+    >
+      <div class="container mx-auto px-4">
+        <div class="flex items-center justify-between h-16">
+          <!-- 左侧Logo和标题 -->
+          <div class="flex items-center gap-3">
+            <div class="text-primary text-2xl">
+              <i class="fa fa-graduation-cap"></i>
             </div>
+            <h1 class="text-xl font-semibold">学生考勤管理系统</h1>
+          </div>
+
+          <!-- 右侧功能区 -->
+          <div class="flex items-center gap-6">
+            <!-- 返回首页按钮 -->
+            <a
+              href="{{ url_for('index') }}"
+              class="flex items-center gap-1 text-gray-600 hover:text-primary transition-colors"
+            >
+              <i class="fa fa-home"></i>
+              <span>首页</span>
+            </a>
+
+            <!-- 用户信息和登出 -->
+            {% if current_user.is_authenticated %}
+            <div class="flex items-center gap-3">
+              <!-- 用户信息 -->
+              <div class="flex items-center gap-2 text-sm text-gray-600">
+                <i class="fa fa-user-circle"></i>
+                <span>{{ current_user.username }}</span>
+                {% if current_user.is_admin() %}
+                <span
+                  class="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full"
+                  >管理员</span
+                >
+                {% elif current_user.is_teacher() %}
+                <span
+                  class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full"
+                  >教师</span
+                >
+                {% else %}
+                <span
+                  class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full"
+                  >用户</span
+                >
+                {% endif %}
+              </div>
+
+              <!-- 登出按钮 -->
+              <a
+                href="{{ url_for('auth.logout') }}"
+                class="flex items-center gap-1 px-3 py-1 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                title="登出"
+              >
+                <i class="fa fa-sign-out"></i>
+                <span>登出</span>
+              </a>
+            </div>
+            {% endif %}
+
+            <!-- 时间显示 -->
+            <div class="text-sm text-gray-500" id="current-time"></div>
+          </div>
         </div>
+      </div>
     </header>
 
     <!-- 主内容区：左侧导航 + 右侧内容 -->
     <div class="flex flex-1 overflow-hidden">
-        <!-- 左侧导航栏 -->
-        <aside class="w-64 bg-white border-r border-gray-200 h-[calc(100vh-4rem)] sticky top-16 p-4 overflow-y-auto">
-            <nav class="space-y-1">
-                <p class="text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-2">系统功能</p>
-                
-                <a href="{{ url_for('dashboard.index') }}" class="sidebar-item {% if request.endpoint and 'dashboard' in request.endpoint %}active{% endif %}">
-                    <i class="fa fa-dashboard w-5 text-center"></i>
-                    <span>数据概览</span>
-                </a>
-                
-                <a href="{{ url_for('student.index') }}" class="sidebar-item {% if request.endpoint and 'student' in request.endpoint %}active{% endif %}">
-                    <i class="fa fa-users w-5 text-center"></i>
-                    <span>学生管理</span>
-                </a>
-                
-                <a href="{{ url_for('course.index') }}" class="sidebar-item {% if request.endpoint and 'course' in request.endpoint %}active{% endif %}">
-                    <i class="fa fa-book w-5 text-center"></i>
-                    <span>课程管理</span>
-                </a>
-                
-                <a href="{{ url_for('attendance.index') }}" class="sidebar-item {% if request.endpoint and 'attendance' in request.endpoint %}active{% endif %}">
-                    <i class="fa fa-check-square-o w-5 text-center"></i>
-                    <span>考勤记录</span>
-                </a>
-                
-                <a href="{{ url_for('leave.index') }}" class="sidebar-item {% if request.endpoint and 'leave' in request.endpoint %}active{% endif %}">
-                    <i class="fa fa-calendar-o w-5 text-center"></i>
-                    <span>请假管理</span>
-                </a>
-            </nav>
-        </aside>
+      <!-- 左侧导航栏 -->
+      <aside
+        class="w-64 bg-white border-r border-gray-200 h-[calc(100vh-4rem)] sticky top-16 p-4 overflow-y-auto"
+      >
+        <nav class="space-y-1">
+          <p
+            class="text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-2"
+          >
+            系统功能
+          </p>
 
-        <!-- 右侧内容区 -->
-        <main class="flex-1 overflow-y-auto bg-neutral p-6">
-            <!-- 页面标题 -->
-            <div class="mb-6">
-                <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold text-gray-800">{% block page_title %}数据概览{% endblock %}</h2>
-                <p class="text-gray-500 mt-1">{% block page_desc %}系统核心数据统计与快速操作{% endblock %}</p>
-            </div>
-            
-            <!-- 页面内容 -->
-            <div class="space-y-6">
-                {% block content %}{% endblock %}
-            </div>
-        </main>
+          <a
+            href="{{ url_for('dashboard.index') }}"
+            class="sidebar-item {% if request.endpoint and 'dashboard' in request.endpoint %}active{% endif %}"
+          >
+            <i class="fa fa-dashboard w-5 text-center"></i>
+            <span>数据概览</span>
+          </a>
+
+          <a
+            href="{{ url_for('student.index') }}"
+            class="sidebar-item {% if request.endpoint and 'student' in request.endpoint %}active{% endif %}"
+          >
+            <i class="fa fa-users w-5 text-center"></i>
+            <span>学生管理</span>
+          </a>
+
+          <a
+            href="{{ url_for('course.index') }}"
+            class="sidebar-item {% if request.endpoint and 'course' in request.endpoint %}active{% endif %}"
+          >
+            <i class="fa fa-book w-5 text-center"></i>
+            <span>课程管理</span>
+          </a>
+
+          <a
+            href="{{ url_for('attendance.index') }}"
+            class="sidebar-item {% if request.endpoint and 'attendance' in request.endpoint %}active{% endif %}"
+          >
+            <i class="fa fa-check-square-o w-5 text-center"></i>
+            <span>考勤记录</span>
+          </a>
+
+          <a
+            href="{{ url_for('leave.index') }}"
+            class="sidebar-item {% if request.endpoint and 'leave' in request.endpoint %}active{% endif %}"
+          >
+            <i class="fa fa-calendar-o w-5 text-center"></i>
+            <span>请假管理</span>
+          </a>
+        </nav>
+      </aside>
+
+      <!-- 右侧内容区 -->
+      <main class="flex-1 overflow-y-auto bg-neutral p-6">
+        <!-- 页面标题 -->
+        <div class="mb-6">
+          <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold text-gray-800">
+            {% block page_title %}{% endblock %}
+          </h2>
+          <p class="text-gray-500 mt-1">{% block page_desc %}{% endblock %}</p>
+        </div>
+
+        <!-- 页面内容 -->
+        <div class="space-y-6">{% block content %}{% endblock %}</div>
+      </main>
     </div>
 
     <!-- 页脚 -->
     <footer class="bg-white border-t border-gray-200 py-4">
-        <div class="container mx-auto px-4 text-center text-sm text-gray-500">
-            <p>© 2024 学生考勤管理系统 - 内网专用</p>
-        </div>
+      <div class="container mx-auto px-4 text-center text-sm text-gray-500">
+        <p>© 2024 学生考勤管理系统 - 内网专用</p>
+      </div>
     </footer>
 
     <!-- 脚本 -->
     <script>
-        // 实时更新时间
-        function updateTime() {
-            const now = new Date();
-            const options = { 
-                year: 'numeric', 
-                month: '2-digit', 
-                day: '2-digit', 
-                hour: '2-digit', 
-                minute: '2-digit', 
-                second: '2-digit' 
-            };
-            document.getElementById('current-time').textContent = now.toLocaleString('zh-CN', options);
-        }
-        updateTime();
-        setInterval(updateTime, 1000);
+      // 实时更新时间
+      function updateTime() {
+        const now = new Date();
+        const options = {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        };
+        document.getElementById("current-time").textContent =
+          now.toLocaleString("zh-CN", options);
+      }
+      updateTime();
+      setInterval(updateTime, 1000);
     </script>
-    
+
     {% block scripts %}{% endblock %}
-</body>
+  </body>
 </html>

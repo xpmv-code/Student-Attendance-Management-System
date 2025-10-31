@@ -2,6 +2,7 @@
 请假管理路由模块
 """
 from flask import Blueprint, render_template, request, flash, redirect, url_for, send_file
+from flask_login import login_required
 from datetime import datetime, date, timedelta
 from sqlalchemy import func, and_, or_
 

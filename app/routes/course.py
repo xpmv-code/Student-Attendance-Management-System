@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file
+from flask_login import login_required
 from app import db
 from app.models import Course, Attendance, Student
 from werkzeug.utils import secure_filename

@@ -2,6 +2,7 @@
 考勤记录路由模块
 """
 from flask import Blueprint, render_template, request, flash, redirect, url_for, send_file
+from flask_login import login_required
 from datetime import datetime, timedelta, date
 from sqlalchemy import func, and_, case
 
