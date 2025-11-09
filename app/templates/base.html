@@ -172,6 +172,14 @@
             <i class="fa fa-calendar-o w-5 text-center"></i>
             <span>请假管理</span>
           </a>
+
+          <a
+            href="{{ url_for('upcoming.upcoming_week_page') }}"
+            class="sidebar-item {% if request.endpoint and 'upcoming' in request.endpoint %}active{% endif %}"
+          >
+            <i class="fa fa-calendar w-5 text-center"></i>
+            <span>周课表</span>
+          </a>
         </nav>
       </aside>
 

@@ -43,9 +43,12 @@ def create_app(config_class=Config):
     from app.routes.attendance import attendance_bp
     from app.routes.leave import leave_bp
     from app.routes.dashboard import dashboard_bp
+    from app.routes.upcoming import bp as upcoming_bp
+
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(student_bp, url_prefix='/student')
     app.register_blueprint(course_bp, url_prefix='/course')
+    app.register_blueprint(upcoming_bp)
     app.register_blueprint(attendance_bp, url_prefix='/attendance')
     app.register_blueprint(leave_bp, url_prefix='/leave')
     app.register_blueprint(dashboard_bp, url_prefix='/dashboard')

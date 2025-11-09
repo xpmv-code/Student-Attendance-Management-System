@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block title %}周课表 - 学生考勤管理系统{% endblock %}
+
+{% block page_title %}周课表{% endblock %}
+{% block page_desc %}查看当前学期的课程安排{% endblock %}
+
+{% block content %}
+<style>
+  .course-card {
+    padding: 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    line-height: 1.45;
+    color: #111;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  .course-card:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  .course-card .name {
+    font-weight: bold;
+    font-size: 13px;
+    margin-bottom: 4px;
+    color: #111;
+  }
+  .course-card .meta {
+    font-size: 11px;
+    opacity: 0.8;
+    margin-top: 2px;
+  }
+</style>
+
+<!-- 筛选和控制栏 -->
+<div class="bg-white rounded-xl p-4 card-shadow mb-6">
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div>
+      <h2 class="text-lg font-semibold text-gray-800">{{ semester_title }}</h2>
+      <div class="text-sm text-gray-500 mt-1">{{ week_label }}</div>
+    </div>
+    
+    <div class="flex flex-wrap items-center gap-3">
+      <!-- 学期选择 -->
+      {% if semesters %}
+      <div class="flex items-center gap-2">
+        <label class="text-sm text-gray-600">学期:</label>
+        <select id="semester-select" class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+          {% for semester in semesters %}
+          <option value="{{ semester }}" {% if semester == current_semester %}selected{% endif %}>{{ semester }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      
+      <!-- 周次选择 -->
+      <div class="flex items-center gap-2">
+        <label class="text-sm text-gray-600">周次:</label>
+        <div class="flex items-center gap-2">
+          <button onclick="changeWeek({{ week_no - 1 }})" 
+                  class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-md text-sm transition-colors"
+                  {% if week_no <= 1 %}disabled class="opacity-50 cursor-not-allowed"{% endif %}>
+            <i class="fa fa-chevron-left"></i>
+          </button>
+          <input type="number" id="week-input" value="{{ week_no }}" min="1" max="20" 
+                 class="w-16 px-2 py-2 border border-gray-300 rounded-md text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary">
+          <button onclick="changeWeek({{ week_no + 1 }})" 
+                  class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-md text-sm transition-colors"
+                  {% if week_no >= 20 %}disabled class="opacity-50 cursor-not-allowed"{% endif %}>
+            <i class="fa fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+      
+      <!-- 操作按钮 -->
+      <div class="flex items-center gap-2">
+        <button onclick="goToCurrentWeek()" 
+                class="px-4 py-2 bg-primary text-white rounded-md text-sm hover:bg-primary/90 transition-colors">
+          <i class="fa fa-calendar"></i> 本周
+        </button>
+        <a href="{{ url_for('course.index') }}" 
+           class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md text-sm hover:bg-gray-200 transition-colors">
+          <i class="fa fa-list"></i> 课程列表
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 课表表格 -->
+<div class="bg-white rounded-xl card-shadow overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200 border-collapse">
+      <thead class="bg-gray-100">
+        <tr>
+          <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider w-28 md:w-32 sticky left-0 bg-gray-100 z-10">
+            节次
+          </th>
+          
+          {% for day_label in day_headers %}
+          <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">
+            {{ day_label }}
+          </th>
+          {% endfor %}
+        </tr>
+      </thead>
+
+      <tbody class="bg-white divide-y divide-gray-200">
+        {% for row in row_slots %}
+        <tr class="h-36">
+          <td class="px-4 py-3 text-center border-r border-gray-200 sticky left-0 bg-white z-10">
+            <div class="font-semibold text-gray-800">{{ row.label }}</div>
+            <div class="text-xs text-gray-500 mt-1">{{ row.time }}</div>
+          </td>
+
+          {% for day_idx in range(7) %}
+            {% set cell_key = "{}-{}".format(day_idx, row.slot_index) %}
+            {% set courses_in_cell = week_grid.get(cell_key, []) %}
+
+            <td class="p-2 border-l border-gray-100 align-top relative
+                       {% if courses_in_cell|length == 0 %}bg-gray-50 bg-opacity-50{% endif %}">
+              
+              <div class="space-y-1.5">
+                {% for course in courses_in_cell %}
+                {% set min_height = course.span_slots * 36 if course.span_slots > 1 else '' %}
+                <div class="course-card" 
+                     style="background-color: {{ course.color_bg }}{% if min_height %}; min-height: {{ min_height }}px{% endif %}" 
+                     title="课程: {{ course.name }}&#10;教师: {{ course.teacher }}&#10;地点: {{ course.place }}&#10;时间: {{ course.raw_time }}&#10;周次: {{ course.week_range }}"
+                     data-course-id="{{ course.course_id }}"
+                     onclick="window.location.href='{{ url_for('course.detail', course_id=course.course_id) }}'">
+                  <div class="name" title="{{ course.name }}">{{ course.name }}</div>
+                  <div class="meta">📍 {{ course.place }}</div>
+                  <div class="meta">👤 {{ course.teacher }}</div>
+                  {% if course.week_range and course.week_range != "全学期" %}
+                  <div class="meta">📅 {{ course.week_range }}</div>
+                  {% endif %}
+                  {% if course.start_period and course.end_period and course.end_period > course.start_period %}
+                  <div class="meta">⏰ {{ course.start_period }}-{{ course.end_period }}节</div>
+                  {% endif %}
+                </div>
+                {% endfor %}
+              </div>
+              
+            </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // 周次选择功能
+  function changeWeek(week) {
+    if (week < 1 || week > 20) return;
+    
+    const semester = document.getElementById('semester-select')?.value || '';
+    const params = new URLSearchParams();
+    params.set('week', week);
+    if (semester) {
+      params.set('semester', semester);
+    }
+    window.location.href = '{{ url_for("upcoming.upcoming_week_page") }}?' + params.toString();
+  }
+  
+  // 跳转到本周
+  function goToCurrentWeek() {
+    const semester = document.getElementById('semester-select')?.value || '';
+    const params = new URLSearchParams();
+    if (semester) {
+      params.set('semester', semester);
+    }
+    window.location.href = '{{ url_for("upcoming.upcoming_week_page") }}?' + params.toString();
+  }
+  
+  // 学期选择变化
+  document.addEventListener('DOMContentLoaded', function() {
+    const semesterSelect = document.getElementById('semester-select');
+    if (semesterSelect) {
+      semesterSelect.addEventListener('change', function() {
+        const week = document.getElementById('week-input').value;
+        const params = new URLSearchParams();
+        params.set('semester', this.value);
+        params.set('week', week);
+        window.location.href = '{{ url_for("upcoming.upcoming_week_page") }}?' + params.toString();
+      });
+    }
+    
+    // 周次输入框变化
+    const weekInput = document.getElementById('week-input');
+    if (weekInput) {
+      weekInput.addEventListener('change', function() {
+        let week = parseInt(this.value);
+        if (week < 1) week = 1;
+        if (week > 20) week = 20;
+        changeWeek(week);
+      });
+    }
+  });
+</script>
+{% endblock %}
